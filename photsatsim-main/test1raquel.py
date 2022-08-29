@@ -1,6 +1,6 @@
 import numpy as np
 
-a = np.zeros(7)
+a = np.zeros(6)
 b = np.zeros(3)
 
 print(a)
