@@ -1,5 +1,7 @@
 import numpy as np
 
+#calculem pi
+
 n = 1000000
 sum = 0
 for i in range(n-1):
