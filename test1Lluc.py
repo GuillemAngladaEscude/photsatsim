@@ -1,6 +1,6 @@
 import numpy as np
 
-#calculem pi
+#calculem pi aaa
 
 n = 1000000
 sum = 0
