@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 # import matplotlib.scale.LogScale as logscale
-
+# comentary
 
 class Image:
 
