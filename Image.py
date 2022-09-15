@@ -1,17 +1,55 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors
-# import matplotlib.scale.LogScale as logscale
-# comentary
+import sys
+import os
+
 
 class Image:
+    """
+        A class used to generate an image using a library of stamps to place the stars
+
+        If 'stampSize' is introduced, a library of stamps with that number of pixels on each side is selected
+            (the default is stamps of 5 pixels on each side).
+        If 'libname' is introduced, the image will be generated using the library of stamps that has that name
+            (this needs only to be used if we want to work with a library that is not generated with 'Driver_library.py')
+
+        Attributes
+        ----------
+        npx: int
+                number of pixels of the image on the x-axis
+        npy: int
+                number of pixels of the image on the y-axis
+        stampSize: int (default 5)
+                number of pixels of the stamps (supposed to have the same number of pixels on both sides)
+        libname: srt (default 'none')
+                name of the library of stamps that we want to work with
+
+        Methods
+        -------
+        generateLibrary()
+            Generates the library of stamps
+
+        SaveToFile()
+            Saves the library of stamps to a file in .npy format
+
+        DrawLibrary()
+            Does a multiplot of all the stamps of the library of stamps
+        """
 
     def __init__(self, npx, npy, stampSize = 5, libname='none'):
-        """This class must be initialized introducing 'npx' & 'npy' which are the number of pixels of the image
-        on each side. Also, we can introduce 'stampSize' or 'libname'. If 'stampSize' is introduced, a library
-        of stamps with that number of pixels on each side is selected (the default is stamps of 5 pixels on each side).
-        If 'libname' is introduced, the image will be generated using the library of stamps that has that name
-        (this needs only to be used if we want to work with a library that is not generated with 'Driver_library.py')."""
+        """Initialize the class Image
+
+                Parameters
+                ----------
+                npx: int
+                        number of pixels of the image on the x-axis
+                npy: int
+                        number of pixels of the image on the y-axis
+                stampSize: odd int (default 5)
+                        number of pixels of the stamps (supposed to have the same number of pixels on both sides)
+                libname: srt (default 'none')
+                        name of the library of stamps that we want to work with
+                """
 
         # number of pixels of the image
         self.__npx = npx
@@ -27,10 +65,10 @@ class Image:
         # generation of an image with npx * npy pixels, each of them initially with zero flux
         self.__array = np.zeros((self.__npx, self.__npy))
 
-    # set of the number of pixels of the stamp
     def __setPixelsStamp(self, npx_stamp_input, npy_stamp_input):
-        """This function sets the number of pixels that the stamps
-         have on each side"""
+        """Sets the number of pixels that the stamps have on each side
+        """
+
         self.__npx_stamp = npx_stamp_input
         self.__npy_stamp = npy_stamp_input
         # The stamp must have an odd number of pixels at each side. If this does not happen, an error occurs
@@ -38,28 +76,32 @@ class Image:
             raise ValueError('The stamp must have an odd number of pixels at each side.')
 
     def __loadLibrary(self, libraryname):
-        """This function loads a file corresponding to a library of stamps
-        with the name 'libraryname'. This library is used to generate the image."""
-        self.__stars = np.load(libraryname)
+        """Loads a file corresponding to a library of stamps with the name 'libraryname' stored in the folder 'stamp_libraries'
+                This library is used to generate the image
+                """
+
+        output_path = sys.path[0] + '/stamp_libraries/'
+        self.__stars = np.load(os.path.join(output_path, libraryname))
 
     def __initLibraryWithStampSize(self, stampSize):
-        """This function initializes a library with the stamps of the size of
+        """Initializes a library with the stamps of the size of
         'stampSize', which shall be an odd integer (1,3,5,7,9...)."""
+
         libname = 'Library_'+str(stampSize)+"x"+str(stampSize)+'.npy'
         self.__setPixelsStamp(stampSize, stampSize)
         self.__loadLibrary(libname)
 
     def __initLibraryWithLibraryName(self, libname_input):
-        """This function initializes a library with the name introduced in
-        'libname_input'. Then obtains the number of pixels of the stamps of the library
-        (supposing that have the same number of pixels on each side). Finally, sets the number of
-        pixels of the stamps."""
+        """"Initializes a library with the name introduced in 'libname_input'.
+        Then obtains the number of pixels of the stamps of the library.
+        Finally, sets the number of pixels of the stamps."""
+
         self.__loadLibrary(libname_input)
         stampSize = self.__stars[0][0]
         self.__setPixelsStamp(stampSize, stampSize)
 
     def __mag_to_flux(self, magnitude):
-        """This function receives an apparent magnitude and returns the corresponding
+        """Receives an apparent magnitude and returns the corresponding
         radiant flux (normalized to be 1 for magnitude = 10)"""
 
         L_sun = 3.828 * 10 ** 33  # solar luminosity: [erg * s^-1] == radiant flux * surface
@@ -78,17 +120,19 @@ class Image:
         return flux
 
     def get_array(self):
-        """This function returns the saved in memory image (modifying this array means modify the saved
+        """Returns the saved in memory image (modifying this array means modify the saved
         in memory array = image)."""
+
         return self.__array
 
     def get_arrayCopy(self):
-        """This function generates a copy of the image (which is a class variable)."""
+        """Generates a copy of the image (which is a class variable)"""
+
         copy = self.__array.copy()
         return copy
 
     def test(self, number_partitions):
-        """This function tests that the flux inside the image remains constant
+        """Tests that the flux inside the image remains constant
         while we place a star in different points of a pixel. 'number_partitions' corresponds
         to the number of partitions that we want to do of the pixel for the test."""
 
@@ -136,8 +180,20 @@ class Image:
         plt.show()
 
     def placeStar(self, catalog):
-        """This function places each star of 'catalog' which must have the shape
-        catalog = [[position pixel for x of star 1, position pixel for y of star 1, apparent magnitude of star 1], [idem for star 2], [idem for star 3], ...]"""
+        """Place each star of 'catalog' on the image
+
+                The stars are placed doing a bilinear interpolation of the stamps (see: https://es.frwiki.wiki/wiki/Interpolation_bilin%C3%A9aire)
+
+                Parameters
+                ----------
+                catalog: list of lists
+                        contains the position of the stars and their apparent magnitude with the following shape
+                        [[position pixel for x of star 1, position pixel for y of star 1, apparent magnitude of star 1], [idem for star 2], [idem for star 3], ...]
+
+                Returns
+                -------
+                Saves the generated image in a class variable (returns nothing)
+                """
 
         for k in range(len(catalog)):
 
@@ -402,5 +458,9 @@ class Image:
 
     def SaveToFile(self):
         """This function saves the image in a file with the name 'GeneratedImage.npy'"""
-        np.save('GeneratedImage', self.__array)
+
+        output_path = sys.path[0] + '/output/'
+        file_name = 'GeneratedImage'
+
+        np.save(os.path.join(output_path, file_name), self.__array)
 

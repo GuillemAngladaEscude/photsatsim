@@ -3,47 +3,57 @@ import numpy as np
 
 class Function:
     """
-        A class used to calculate different functions
+    A class used to calculate a point (x,y) with different possible functions
 
-        Attributes
-        ----------
-        func : int
-            used to choose between different possible functions
-        pars : list
+    Attributes
+    ----------
+    func : int
+            used to choose between different possible functions:
+            func=0 -> normalized gaussian, func=1 -> normalized lorentzian, func=2 -> normalized circle
+    pars : list
             parameters of the function (default [0, 0, 0.25, 0.25])
+            normalized gaussian: pars=[mu_x, mu_y, sigma_x, sigma_y]
+            normalized lorentzian: pars=[mu_x, mu_y, gamma_x, gamma_y]
+            normalized circle: pars=[mu_x, mu_y, radius]
 
-        Methods
-        -------
-        eval(x,y)
-            Evaluates the point (x,y) using the selected function
-        """
+    Methods
+    -------
+    eval(x,y)
+        Evaluates the point (x,y) using the selected function (with 'func')
+    """
 
     def __init__(self, func, pars=[0, 0, 0.25, 0.25]):
-        """
+        """Initialize the class Function
+
         Parameters
         ----------
         func : int
-            used to choose between different possible functions:
-            func=0 -> normalized gaussian, func=1 -> normalized lorentzian, func=2 -> normalized circle
+                used to choose between different possible functions:
+                func=0 -> normalized gaussian, func=1 -> normalized lorentzian, func=2 -> normalized circle
         pars : list
-            parameters of the function: pars=[mu x, mu y, ] (default [0, 0, 0.25, 0.25])
+                parameters of the function (default [0, 0, 0.25, 0.25])
+                normalized gaussian: pars=[mu_x, mu_y, sigma_x, sigma_y]
+                normalized lorentzian: pars=[mu_x, mu_y, gamma_x, gamma_y]
+                normalized circle: pars=[mu_x, mu_y, radius]
         """
-
-        """This class contains different functions that can be selected using 'func'. For 'func'=0 we have a normalized gaussian,
-        for 'func'=1 we have a normalized lorentzian, for 'func'=2 we have a normalized circle.
-        'pars' is a list used to change the function parameters. The different components are:
-        pars (= parameters) components --> 1st & 2nd components:     {mu_x, mu_y};
-                                           3rd & 4th components:     {sigma_x, sigma_y} for func = 0;
-                                                                     {gamma_x, gamma_y} for func = 1;
-                                                                     {radius} for func = 2"""
 
         self.func = func
         self.pars = pars
 
+        # final value of the function after evaluating on the chosen point (x,y)
+        # initialized with value = 0.0
         self.__val = 0.0
 
     def eval(self, x, y):
-        """Evaluate the point (x,y) with the chosen function (func = 0, 1, 2)"""
+        """Evaluate the point (x,y) with the chosen function
+
+        Parameters
+        ----------
+        x: float
+                x position in which we want to calculate the function
+        y: float
+                y position in which we want to calculate the function
+        """
 
         # definition of the variable 'val', that gives the value of the function in each point (x, y)
         self.__val = 0.0
