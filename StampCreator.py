@@ -6,6 +6,8 @@ class StampCreator:
     """
     A class used to create stamps (matrix of pixels)
 
+    This class uses the modules Function and numpy
+
     Attributes
     ----------
     func: int
@@ -22,7 +24,7 @@ class StampCreator:
     setNsubpix(nx_input, ny_input)
         Sets the number of partitions inside each pixel, this net used to calculate the value of the chosen function on each point
 
-    generateStamp(x_shift=0.0, y_shift=0.0)
+    generateStamp(x_shift, y_shift)
         Generates a stamp using the chosen function (with 'func') and the desired number of pixels (with 'px' & 'py')
     """
 
@@ -43,16 +45,11 @@ class StampCreator:
     def __init__(self, func, px, py):
         """Initialize the class StampCreator
 
-        Parameters
-        ----------
-        func: int
-                used to choose between different possible functions (from Functions module):
+        :param int func: used to choose between different possible functions (from Functions module):
                 func=0 -> normalized gaussian, func=1 -> normalized lorentzian, func=2 -> normalized circle
                 (see Function module documentation for more information)
-        px : int
-                number of pixels of the stamp in the x side
-        py : int
-                number of pixels of the stamp in the y side
+        :param int px : number of pixels of the stamp in the x side
+        :param int py : number of pixels of the stamp in the y side
         """
 
         self.func = func
@@ -63,12 +60,8 @@ class StampCreator:
     def setNsubpix(self, nx_input, ny_input):
         """Set the number of partitions inside each pixel (this net is used to calculate the value of the chosen function on each point)
 
-        Parameters
-        ----------
-        nx_input: int
-                partitions inside the pixel in the x side (default 100)
-        ny_input: int
-                partitions inside the pixel in the y side (default 100)
+        :param int nx_input: partitions inside the pixel in the x side (default 100)
+        :param int ny_input: partitions inside the pixel in the y side (default 100)
         """
 
         self.__nx = nx_input
@@ -77,17 +70,11 @@ class StampCreator:
     def generateStamp(self, x_shift=0.0, y_shift=0.0):
         """Generate a stamp using the chosen function (with 'func') and the desired number of pixels (with 'px' & 'py')
 
-        Parameters
-        ----------
-        x_shift: float
-                shift of the origin of the chosen function on the x-axis
-        y_shift: float
-                shift of the origin of the chosen function on the y-axis
+        :param float x_shift: shift of the origin of the chosen function on the x-axis (default 0.0)
+        :param float y_shift: shift of the origin of the chosen function on the y-axis (default 0.0)
 
-        Returns
-        -------
-        myStamp: array
-            generated stamp
+        :return: generated stamp
+        :rtype: array
         """
 
         # initialize the array that will contain the values of the stamp on each pixel
@@ -104,7 +91,12 @@ class StampCreator:
                     # move through the y-axis of the net inside the pixel
                     for j in range(self.__ny):
                         # calculate the x & y positions each time that we are moving through the net
-                        x = - (self.px * self.lx) / 2.0 + I * self.lx + self.__dx / 2.0 + i * self.__dx - x_shift  # posem (-) x_shift pq així, al posar un desplaçament positiu, la funció es deslpaça cap a un numero mes gran
+
+                        # x = (coords. origin) + (displacement of 1 pixel on each iteration) +
+                        # + (we place the x in the middle of the pixel) + (we move through the small net
+                        # on each iteration) + (we add a shift from the origin)
+
+                        x = - (self.px * self.lx) / 2.0 + I * self.lx + self.__dx / 2.0 + i * self.__dx - x_shift
                         y = - (self.py * self.ly) / 2.0 + J * self.ly + self.__dy / 2.0 + j * self.__dy - y_shift
 
                         # evaluate the function (of Function module) on each point of the net and sum all results

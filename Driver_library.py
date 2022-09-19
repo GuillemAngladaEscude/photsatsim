@@ -25,4 +25,6 @@ myLibrary.SaveToFile()
 # do a plot of all the stamps of the library
 myLibrary.DrawLibrary()
 
-# myLibrary.getError()
+# Obtain the maximum difference of flux inside a stamp with respect to flux = 1.0
+# (supposing that the flux inside all the stamps is normalized to 1.0)
+myLibrary.getError()

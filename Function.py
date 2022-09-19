@@ -5,6 +5,8 @@ class Function:
     """
     A class used to calculate a point (x,y) with different possible functions
 
+    This class uses the module numpy
+
     Attributes
     ----------
     func : int
@@ -25,16 +27,12 @@ class Function:
     def __init__(self, func, pars=[0, 0, 0.25, 0.25]):
         """Initialize the class Function
 
-        Parameters
-        ----------
-        func : int
-                used to choose between different possible functions:
-                func=0 -> normalized gaussian, func=1 -> normalized lorentzian, func=2 -> normalized circle
-        pars : list
-                parameters of the function (default [0, 0, 0.25, 0.25])
-                normalized gaussian: pars=[mu_x, mu_y, sigma_x, sigma_y]
-                normalized lorentzian: pars=[mu_x, mu_y, gamma_x, gamma_y]
-                normalized circle: pars=[mu_x, mu_y, radius]
+        :param int func : used to choose between different possible functions:
+        func=0 -> normalized gaussian, func=1 -> normalized lorentzian, func=2 -> normalized circle
+
+        :param list pars : parameters of the function (default [0, 0, 0.25, 0.25]). For a normalized gaussian:
+        pars=[mu_x, mu_y, sigma_x, sigma_y]. For a normalized lorentzian: pars=[mu_x, mu_y, gamma_x, gamma_y].
+        For a normalized circle: pars=[mu_x, mu_y, radius]
         """
 
         self.func = func
@@ -47,12 +45,11 @@ class Function:
     def eval(self, x, y):
         """Evaluate the point (x,y) with the chosen function
 
-        Parameters
-        ----------
-        x: float
-                x position in which we want to calculate the function
-        y: float
-                y position in which we want to calculate the function
+        :param float x: x position in which we want to calculate the function
+        :param float y: y position in which we want to calculate the function
+
+        :return: the value of the function in the point (x, y)
+        :rtype: float
         """
 
         # definition of the variable 'val', that gives the value of the function in each point (x, y)

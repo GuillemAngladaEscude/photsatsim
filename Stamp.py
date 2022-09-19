@@ -5,6 +5,8 @@ class Stamp:
     """
     A class used to work with a stamp (matrix of pixels)
 
+    This class uses the module matplotlib.pyplot
+
     Attributes
     ----------
     myStamp : array
@@ -29,10 +31,7 @@ class Stamp:
     def __init__(self, myStamp):
         """Initialize the class Stamp
 
-        Parameters
-        ----------
-        myStamp : array
-                matrix of pixels that we want to work with
+        :param array myStamp: matrix of pixels that we want to work with
         """
 
         # number of pixels on each side of the stamp
@@ -45,10 +44,7 @@ class Stamp:
     def setScale(self, fac):
         """Set the factor for which the stamp will be multiplied
 
-        Parameters
-        ----------
-        fac : float
-                factor for which the stamp is multiplied
+        :param float fac: factor for which the stamp is multiplied
         """
 
         # change the value of the scale factor for the introduced value
@@ -57,10 +53,8 @@ class Stamp:
     def getSum(self):
         """Give the total sum of the values inside each pixel of the stamp
 
-        Returns
-        -------
-        sum: float
-                total sum of the values inside each pixel of the stamp
+        :return: total sum of the values inside each pixel of the stamp
+        :rtype: float
         """
 
         # initialize the value of the sum (at first = 0.0)
@@ -79,9 +73,7 @@ class Stamp:
     def drawStamp(self):
         """Do a plot of the introduced stamp
 
-        Returns
-        -------
-        a plot of the introduced stamp using matplotlib.pyplot.matshow
+        :return: a plot of the introduced stamp using matplotlib.pyplot.matshow
         """
 
         plt.matshow(self.myStamp)
