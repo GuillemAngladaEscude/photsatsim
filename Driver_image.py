@@ -6,7 +6,8 @@ from Image import Image
 catalog = [[25.65, 31.54, 6.0], [5.979, 14.974, 4.7], [10.77, 17.87, 5.2]]
 
 # initialize the class Image with 50 pixels on each side
-myimage = Image(50, 50)
+N_pix = 50
+myimage = Image(N_pix, N_pix)
 
 # place the stars of the catalog
 myimage.placeStar(catalog)
