@@ -23,7 +23,8 @@ from catalog_class import Catalog
 #############################################################################
 # obrim csv del catàleg GAIA
 max_mag = 8  # magnitud màxima a què limitem el catàleg a carregar
-stardata = Catalog.load(max_mag)
+sector = 'test_sector'
+stardata = Catalog.load(max_mag,sector)
 print("Star catalog loaded successfully!")
 #############################################################################
 
