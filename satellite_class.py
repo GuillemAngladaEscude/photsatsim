@@ -46,7 +46,7 @@ class Satellite:
             if self.optic.check_if_inframe(r_SBFOVF):
                 frame_coord = self.optic.project_SBFOVF_2_sensor(r_SBFOVF, 'linear')
                 new_row = [frame_coord[0], frame_coord[1],
-                           star[5]]  # star[5] dona la magnitud aparent; canviar-ho a star[4] si es vol el flux
+                           float(star[5])]  # star[5] dona la magnitud aparent; canviar-ho a star[4] si es vol el flux
                 stars_in_frame.append(new_row)
 
         return stars_in_frame
