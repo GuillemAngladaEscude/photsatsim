@@ -26,7 +26,7 @@ class Orbit:
 
     def __init__(self, t0, zp: float, za: float, i: float, raan: float, theta_0=0, aop=0):
 
-        R = 6378.0
+        R = 6378.1
         mu = 3.986004418e5  # [km^3/s^2]
         J2 = 1.08263e-3  # []
         a = R + (zp + za) / 2
@@ -68,9 +68,18 @@ class Orbit:
 
         # initialize the propagated parameters
         self.propagate(0)
-        self.get_lat_lon_h()
+        #self.get_lat_lon_h()
         print("Orbit initialised!")
         self.print_elements()
+
+    @classmethod
+    def from_elements(cls,t0, zp, za, i, raan, theta_0, aop):
+        return cls(t0, zp, za, i, raan, theta_0, aop)
+
+    @classmethod
+    def from_rv(cls, t0, r, v):
+        [zp, za, i, raan, theta, aop] = cls.rv_2_elements(r,v)
+        return cls(t0, zp, za, i, raan, theta, aop)
 
     def print_elements(self):
         R = 6378.0
@@ -83,23 +92,30 @@ class Orbit:
             tsp_print = f"{(self.__t_0 + self.__propagated_deltat) / 60} minutes"
 
         print(f"""
-        Orbital elements after propagating t = {self.__propagated_deltat / 60} minutes:
-          Perigee altitude: {self.__a * (1 - self.__e) - R} km
-          Apogee altitude: {self.__a * (1 + self.__e) - R} km
-          Semimajor axis: {self.__a} km;
-          Eccentricity: {self.__e};
-          Inclination: {self.__i * 180 / pi} degrees;
-          Right Ascension of the Ascending Node: {self.__RAAN * 180 / pi} degrees;
-          Argument of perigee: {aop_print};
-          Orbital period: {self.__T / 60} minutes;
-          True anomaly: {self.__theta * 180 / pi} degrees;
-          Time since perigee: {tsp_print};
-          Specific angular momentum: {self.__h0} km^2/s.
-          Geocentric equatorial inertial frame position: {self.__r_geo_inert} km
-          Geocentric equatorial Earth-fixed frame position: {self.__r_geo_rot} km
-          Longitude: {self.__lon} degrees
-          Latitude: {self.__lat} degrees
-          Altitude: {self.__altitude} km
+----------------------------------------------------------------------------------------------------------------------
+Current time: {self.__t}
+Propagated delta_t = {self.__propagated_deltat / 60} minutes:
+Time since perigee of initial orbit: {tsp_print};
+Time of last perigee: {self.t_last_perigee}
+        
+Orbital elements at current time:
+    Perigee altitude: {self.__a * (1 - self.__e) - R} km
+    Apogee altitude: {self.__a * (1 + self.__e) - R} km
+    Semimajor axis: {self.__a} km;
+    Eccentricity: {self.__e};
+    Inclination: {self.__i * 180 / pi} degrees;
+    Right Ascension of the Ascending Node: {self.__RAAN * 180 / pi} degrees;
+    Argument of perigee: {aop_print};
+    Orbital period: {self.__T / 60} minutes;
+    True anomaly: {self.__theta * 180 / pi} degrees;
+    Specific angular momentum: {self.__h0} km^2/s;
+          
+Geocentric equatorial inertial frame position: {self.__r_geo_inert} km
+Geocentric equatorial inertial frame velocity: {self.__v_geo_inert} km/s
+Geocentric equatorial Earth-fixed frame position: {self.__r_geo_rot} km
+Longitude: {self.__lon} degrees
+Latitude: {self.__lat} degrees
+Altitude: {self.__altitude} km
         """)
 
     @property
@@ -108,8 +124,11 @@ class Orbit:
 
     @property
     def t_last_perigee(self):
+        return self.__t - astropy.time.core.TimeDelta(self.__t_0 * u.s)
 
-        return self.__t - astropy.time.core.TimeDelta(self.__t_0 * u.s) #- astropy.time.core.TimeDelta(floor(self.__propagated_deltat/self.__T0)*self.__T0 * u.s)
+    @property
+    def v_geo_gcrs(self):
+        return self.__v_geo_inert
 
     def propagate(self, delta_t, method="Kepler_J2"):
         self.__t = self.__t0 + astropy.time.core.TimeDelta(delta_t * u.min)
@@ -117,6 +136,8 @@ class Orbit:
         self.__propagated_deltat = delta_t * 60
         if method == "Kepler_J2":  # Aquest mètode aplica una simple propagació kepleriana (2-body) afegint-hi l'efecte secular de J2 sobre RAAN i AOP.
             self.__propagate_KeplerJ2(delta_t)
+        elif method=="interpolate_from_file":
+            pass #quan s'hagi propagat una òrbita amb precisió i se n'hagin guardat els valors en un arxiu separat s'utilitzarà aquest mètode
         else:
             print(f"Method {method} is not recognized as a valid method!")
 
@@ -205,6 +226,36 @@ class Orbit:
 
     def get_lat_lon_h(self):
         return [self.__lat, self.__lon, self.__altitude]
+
+    @staticmethod
+    def rv_2_elements(r, v):
+        mu = 3.986004418e5
+        R = 6378.1
+
+        r_mod = np.linalg.norm(r)
+        v_mod = np.linalg.norm(v)
+        a = 1/(2/r_mod - v_mod**2/mu)
+        vr = np.dot(r,v)/r_mod
+        e_vec = (1/mu)*((v_mod**2 - mu/r_mod)*r - r_mod*vr*v)
+        e = np.linalg.norm(e_vec)
+        rp = a*(1-e)
+        ra = a*(1+e)
+        zp = rp-R
+        za = ra-R
+        h = np.cross(r,v)
+        i = np.arccos(h[2]/np.linalg.norm(h))
+        N = np.cross([0,0,1],h)
+        N_mod = np.linalg.norm(N)
+        RAAN = np.arccos(N[0]/N_mod)
+        if N[1]<0:
+            RAAN = 2*pi-RAAN
+        aop = np.arccos((np.dot(N,e_vec))/(N_mod*e))
+        if e_vec[2]<0:
+            aop = 2*pi-aop
+        theta = np.arccos((np.dot(e_vec,r))/(e*r_mod))
+        if vr<0:
+            theta = -theta
+        return np.array([zp, za, i*180/pi, RAAN*180/pi, theta*180/pi, aop*180/pi])
 
     def __R3(self, theta):  # todo: revisar les tres matrius. Al curtis surten les transposades com si no ho fossin
         R = np.zeros((3, 3))

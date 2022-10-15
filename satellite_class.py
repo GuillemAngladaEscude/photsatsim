@@ -23,11 +23,13 @@ import aux_functions as auxf
 
 class Satellite:
 
-    def __init__(self, optic, t0, zp: float, za: float, i: float, raan: float, theta_0 = 0, aop = 0):
+    #def __init__(self, optic, t0, zp: float, za: float, i: float, raan: float, theta_0 = 0, aop = 0):
+    def __init__(self, optic, orbit):
 
-        self.orbit = Orbit(t0, zp, za, i, raan, theta_0, aop)
-        self.att = Attitude(self.orbit)
+        #self.orbit = Orbit(t0, zp, za, i, raan, theta_0, aop)
+        self.orbit = orbit
         self.optic = optic
+        self.att = Attitude(self.orbit)
 
 
     def get_stars_in_frame(self): # aquest mètode va aquí perquè depèn tant d'attitude com d'òptica

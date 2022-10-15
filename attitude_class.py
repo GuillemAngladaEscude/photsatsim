@@ -36,6 +36,7 @@ class Attitude:
         #self.set_angles(0,0,0,180)
         self.__angles_2_r_SS_SBREF()
         self.__r_SS_SBREF_2_GCRS()
+        self.__r_SS_GCRS_2_angles_ICRS()
 
     def __get_M_SBREF2GCRS(self):
 
@@ -91,7 +92,7 @@ class Attitude:
     def __aberration_correction(self):
         c = 299792.458 #km/s
         n = -self.__r_SS_GCRS
-        v_sat_geo = [0, 0, 0] #velocitat geocèntrica GCRS (inertial) #todo: afegir-la al propagador i convertir de GECS a GCRS
+        v_sat_geo = self.__orbit.v_geo_gcrs
         earth = get_body_barycentric_posvel('Earth', self.__t)
         vx = earth[1].x.value / (24 * 3600)
         vy = earth[1].y.value / (24 * 3600)
@@ -101,21 +102,6 @@ class Attitude:
 
         s = -n + np.cross((1/c)*n,np.cross(v_sat,n)) + (1/c**2)*( np.cross(n*np.dot(n,v_sat),np.cross(v_sat,n) ) + 0.5*np.cross(v_sat,np.cross(n,v_sat)))
         self.__r_SS_GCRS = s
-
-    # def GCRS_2_SBFOVF(self, r):
-    #     M = self.__get_M_SBREF2GCRS()
-    #     r_SBREF = np.matmul(np.linalg.inv(M), r)
-    #
-    #     M = np.transpose(auxf.R1(self.__roll) @ auxf.R1(self.__pitch) @ auxf.R1(self.__yaw)) #todo: revisar; agrupar en un mètode per no duplicar codi
-    #     r_SBBF =  np.matmul(M, r_SBREF)
-    #
-    #     M = auxf.R1(self.__alpha)
-    #     r_SBSSF = np.matmul(M, r_SBBF)
-    #
-    #     M = auxf.R1(self.__alpha)
-    #     r_SBFOVF = np.matmul(M, r_SBSSF)
-    #
-    #     return r_SBFOVF
 
     def __r_SS_GCRS_2_SBREF(self): #todo: revisar
         M = self.__get_M_SBREF2GCRS()
@@ -186,8 +172,6 @@ class Attitude:
         #print(f"r_GCRS: {self.__r_SS_GCRS}")
         self.__r_SS_GCRS_2_SBREF()
 
-        self.__r_SS_GCRS_2_angles_ICRS() #todo: eliminar! Només la poso un sec per fer la prova
-
         #print(f"r_SBREF: {self.__r_SS_SBREF}")
         self.__r_SS_SBREF_2_angles()
         self.__compute_matrices()
@@ -203,26 +187,11 @@ class Attitude:
         return r_gcrs
 
 
-    # def __get_k_ICRS_GCRS(self):
-    #     k_icrs = SkyCoord(ra=0, dec=90, obstime=self.__t, frame='icrs', unit='deg')
-    #     k_icrs_gcrs = k_icrs.transform_to('gcrs')
-    #     k_icrs_gcrs.representation_type = 'cartesian'
-    #     return [k_icrs_gcrs.x, k_icrs_gcrs.y, k_icrs_gcrs.z]
-
-    # def __get_r_sun_GCRS(self):
-    #     loc = EarthLocation.from_geocentric(self.__orbit.__r_geo_rot[0], self.__orbit.__r_geo_rot[1], self.__orbit.__r_geo_rot[2], u.km)
-    #     r_sun_gcrs = get_body('sun', self.__t, loc)
-    #     r_sun_mod = r_sun_gcrs.distance
-    #     r_sun_gcrs.representation_type = 'cartesian'
-    #     return [(r_sun_gcrs.x / r_sun_mod), (r_sun_gcrs.y / r_sun_mod), (r_sun_gcrs.z / r_sun_mod)]
-
     def __r_SS_GCRS_2_angles_ICRS(self):
         coord_GCRS = SkyCoord(x=self.__r_SS_GCRS[0], y=self.__r_SS_GCRS[1], z=self.__r_SS_GCRS[2], obstime=self.__t, frame='gcrs', representation_type='cartesian')
         coord_ICRS = coord_GCRS.transform_to('icrs')
         self.__ra_ICRS = coord_ICRS.ra.value
         self.__dec_ICRS = coord_ICRS.dec.value
-
-        print(coord_ICRS)
 
     
 ############################################################################################
@@ -264,3 +233,31 @@ class Attitude:
         return 'test_sector'
 
 
+    # def GCRS_2_SBFOVF(self, r):
+    #     M = self.__get_M_SBREF2GCRS()
+    #     r_SBREF = np.matmul(np.linalg.inv(M), r)
+    #
+    #     M = np.transpose(auxf.R1(self.__roll) @ auxf.R1(self.__pitch) @ auxf.R1(self.__yaw)) #todo: revisar; agrupar en un mètode per no duplicar codi
+    #     r_SBBF =  np.matmul(M, r_SBREF)
+    #
+    #     M = auxf.R1(self.__alpha)
+    #     r_SBSSF = np.matmul(M, r_SBBF)
+    #
+    #     M = auxf.R1(self.__alpha)
+    #     r_SBFOVF = np.matmul(M, r_SBSSF)
+    #
+    #     return r_SBFOVF
+
+
+    # def __get_k_ICRS_GCRS(self):
+    #     k_icrs = SkyCoord(ra=0, dec=90, obstime=self.__t, frame='icrs', unit='deg')
+    #     k_icrs_gcrs = k_icrs.transform_to('gcrs')
+    #     k_icrs_gcrs.representation_type = 'cartesian'
+    #     return [k_icrs_gcrs.x, k_icrs_gcrs.y, k_icrs_gcrs.z]
+
+    # def __get_r_sun_GCRS(self):
+    #     loc = EarthLocation.from_geocentric(self.__orbit.__r_geo_rot[0], self.__orbit.__r_geo_rot[1], self.__orbit.__r_geo_rot[2], u.km)
+    #     r_sun_gcrs = get_body('sun', self.__t, loc)
+    #     r_sun_mod = r_sun_gcrs.distance
+    #     r_sun_gcrs.representation_type = 'cartesian'
+    #     return [(r_sun_gcrs.x / r_sun_mod), (r_sun_gcrs.y / r_sun_mod), (r_sun_gcrs.z / r_sun_mod)]
