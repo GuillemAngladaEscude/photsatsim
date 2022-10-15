@@ -22,7 +22,7 @@ import aux_functions as auxf
 
 class Attitude:
 
-    def __init__(self,orbit: Orbit):
+    def __init__(self, orbit: Orbit):
 
         #parking values
         self.__yaw = 0
@@ -38,23 +38,24 @@ class Attitude:
         self.__r_SS_SBREF_2_GCRS()
 
     def __get_M_SBREF2GCRS(self):
-        #todo: el temps ha de ser l'inicial de l'òrbita present, no l'actual
+
+        t = self.__orbit.t_last_perigee
         M = np.zeros((3,3))
 
-        EM_barycenter_GCRS = get_body('earth-moon-barycenter', self.__t)
+        EM_barycenter_GCRS = get_body('earth-moon-barycenter', t)  # GCRS: Geocentric Celestial Reference Frame
         EM_barycenter_GCRS.representation_type = 'cartesian'
         r = [EM_barycenter_GCRS.x.value, EM_barycenter_GCRS.y.value, EM_barycenter_GCRS.z.value]
         loc = EarthLocation.from_geocentric(r[0], r[1], r[2], u.km)
-        a = EarthLocation.get_gcrs_posvel(loc, self.__t)
-        r_EMBC_GCRS = a[0]
+        a = EarthLocation.get_gcrs_posvel(loc, t)
+        r_EMBC_GCRS = a[0]  # EMBC: Earth-Moon Barycenter
         v_EMBC_GCRS = a[1]
 
         BME_frame = astropy.coordinates.builtin_frames.BarycentricMeanEcliptic()
 
-        a = SkyCoord(lon=0, lat=90, obstime=self.__t, frame=BME_frame, unit='deg')
+        a = SkyCoord(lon=0, lat=90, obstime=t, frame=BME_frame, unit='deg')
         b = a.transform_to('gcrs')
 
-        c = astropy.coordinates.GCRS(ra=b.ra, dec=b.dec, obstime=self.__t, obsgeoloc=r_EMBC_GCRS, obsgeovel=v_EMBC_GCRS)
+        c = astropy.coordinates.GCRS(ra=b.ra, dec=b.dec, obstime=t, obsgeoloc=r_EMBC_GCRS, obsgeovel=v_EMBC_GCRS)
         c.representation_type = 'cartesian'
 
         k_ecl_GCRS = np.array([c.x.value, c.y.value, c.z.value])
@@ -63,7 +64,7 @@ class Attitude:
         M[1,2] = k_ecl_GCRS[1]
         M[2,2] = k_ecl_GCRS[2]
 
-        r_sun_gcrs = get_body('sun', self.__t, loc)
+        r_sun_gcrs = get_body('sun', t, loc)
         r_sun_mod = r_sun_gcrs.distance
         r_sun_gcrs.representation_type ='cartesian'
         r_sun_unit = [r_sun_gcrs.x/r_sun_mod, r_sun_gcrs.y/r_sun_mod, r_sun_gcrs.z/r_sun_mod]
@@ -101,20 +102,20 @@ class Attitude:
         s = -n + np.cross((1/c)*n,np.cross(v_sat,n)) + (1/c**2)*( np.cross(n*np.dot(n,v_sat),np.cross(v_sat,n) ) + 0.5*np.cross(v_sat,np.cross(n,v_sat)))
         self.__r_SS_GCRS = s
 
-    def GCRS_2_SBFOVF(self, r):
-        M = self.__get_M_SBREF2GCRS()
-        r_SBREF = np.matmul(np.linalg.inv(M), r)
-
-        M = np.transpose(auxf.R1(self.__roll) @ auxf.R1(self.__pitch) @ auxf.R1(self.__yaw)) #todo: revisar; agrupar en un mètode per no duplicar codi
-        r_SBBF =  np.matmul(M, r_SBREF)
-
-        M = auxf.R1(self.__alpha)
-        r_SBSSF = np.matmul(M, r_SBBF)
-
-        M = auxf.R1(self.__alpha)
-        r_SBFOVF = np.matmul(M, r_SBSSF)
-
-        return r_SBFOVF
+    # def GCRS_2_SBFOVF(self, r):
+    #     M = self.__get_M_SBREF2GCRS()
+    #     r_SBREF = np.matmul(np.linalg.inv(M), r)
+    #
+    #     M = np.transpose(auxf.R1(self.__roll) @ auxf.R1(self.__pitch) @ auxf.R1(self.__yaw)) #todo: revisar; agrupar en un mètode per no duplicar codi
+    #     r_SBBF =  np.matmul(M, r_SBREF)
+    #
+    #     M = auxf.R1(self.__alpha)
+    #     r_SBSSF = np.matmul(M, r_SBBF)
+    #
+    #     M = auxf.R1(self.__alpha)
+    #     r_SBFOVF = np.matmul(M, r_SBSSF)
+    #
+    #     return r_SBFOVF
 
     def __r_SS_GCRS_2_SBREF(self): #todo: revisar
         M = self.__get_M_SBREF2GCRS()
@@ -160,6 +161,7 @@ class Attitude:
         self.__r_SS_SBREF_2_GCRS()
         self.__r_SS_SBREF_2_angles()
         self.__compute_matrices()
+        self.__r_SS_GCRS_2_angles_ICRS()
 
     #@angles.setter
     def set_angles(self,yaw,pitch,roll,alpha):
@@ -172,13 +174,19 @@ class Attitude:
 
         self.__angles_2_r_SS_SBREF()
         self.__r_SS_SBREF_2_GCRS()
+        self.__r_SS_GCRS_2_angles_ICRS()
 
     #@target.setter
     def set_pointing(self, ra_ICRS, dec_ICRS):
 
+        self.ra_ICRS = ra_ICRS
+        self.dec_ICRS = dec_ICRS
+
         self.__r_SS_GCRS = self.__angles_ICRS_2_r_GCRS(ra_ICRS, dec_ICRS)
         #print(f"r_GCRS: {self.__r_SS_GCRS}")
         self.__r_SS_GCRS_2_SBREF()
+
+        self.__r_SS_GCRS_2_angles_ICRS() #todo: eliminar! Només la poso un sec per fer la prova
 
         #print(f"r_SBREF: {self.__r_SS_SBREF}")
         self.__r_SS_SBREF_2_angles()
@@ -188,26 +196,34 @@ class Attitude:
         target_icrs = SkyCoord(ra=ra_ICRS, dec=dec_ICRS, obstime=self.__t, frame='icrs', unit='deg')
         target_gcrs = target_icrs.transform_to('gcrs')
         target_gcrs.representation_type = 'cartesian'
-        r_gcrs = np.array([target_gcrs.x.value, target_gcrs.y.value, target_gcrs.z.value,])
+        r_gcrs = np.array([target_gcrs.x.value, target_gcrs.y.value, target_gcrs.z.value])
 
         target_icrs.representation_type = 'cartesian'
         #print(f"r_ICRS: {target_icrs}")
         return r_gcrs
 
 
-    def __get_k_ICRS_GCRS(self):
-        k_icrs = SkyCoord(ra=0, dec=90, obstime=self.__t, frame='icrs', unit='deg')
-        k_icrs_gcrs = k_icrs.transform_to('gcrs')
-        k_icrs_gcrs.representation_type = 'cartesian'
-        return [k_icrs_gcrs.x, k_icrs_gcrs.y, k_icrs_gcrs.z]
+    # def __get_k_ICRS_GCRS(self):
+    #     k_icrs = SkyCoord(ra=0, dec=90, obstime=self.__t, frame='icrs', unit='deg')
+    #     k_icrs_gcrs = k_icrs.transform_to('gcrs')
+    #     k_icrs_gcrs.representation_type = 'cartesian'
+    #     return [k_icrs_gcrs.x, k_icrs_gcrs.y, k_icrs_gcrs.z]
 
-    def __get_r_sun_GCRS(self):
-        loc = EarthLocation.from_geocentric(self.__orbit.__r_geo_rot[0], self.__orbit.__r_geo_rot[1], self.__orbit.__r_geo_rot[2], u.km)
-        r_sun_gcrs = get_body('sun', self.__t, loc)
-        r_sun_mod = r_sun_gcrs.distance
-        r_sun_gcrs.representation_type = 'cartesian'
-        return [(r_sun_gcrs.x / r_sun_mod), (r_sun_gcrs.y / r_sun_mod), (r_sun_gcrs.z / r_sun_mod)]
-    
+    # def __get_r_sun_GCRS(self):
+    #     loc = EarthLocation.from_geocentric(self.__orbit.__r_geo_rot[0], self.__orbit.__r_geo_rot[1], self.__orbit.__r_geo_rot[2], u.km)
+    #     r_sun_gcrs = get_body('sun', self.__t, loc)
+    #     r_sun_mod = r_sun_gcrs.distance
+    #     r_sun_gcrs.representation_type = 'cartesian'
+    #     return [(r_sun_gcrs.x / r_sun_mod), (r_sun_gcrs.y / r_sun_mod), (r_sun_gcrs.z / r_sun_mod)]
+
+    def __r_SS_GCRS_2_angles_ICRS(self):
+        coord_GCRS = SkyCoord(x=self.__r_SS_GCRS[0], y=self.__r_SS_GCRS[1], z=self.__r_SS_GCRS[2], obstime=self.__t, frame='gcrs', representation_type='cartesian')
+        coord_ICRS = coord_GCRS.transform_to('icrs')
+        self.__ra_ICRS = coord_ICRS.ra.value
+        self.__dec_ICRS = coord_ICRS.dec.value
+
+        print(coord_ICRS)
+
     
 ############################################################################################
 
@@ -241,5 +257,10 @@ class Attitude:
         r_pqr = self.__M_SBFOVF_pqr @ r_SBFOVF
 
         return r_pqr
+
+
+    def get_sector(self):
+        # todo: definir el sector del cel que toqui segons els arxius del catàleg GAIA
+        return 'test_sector'
 
 

@@ -4,10 +4,11 @@ import aux_functions as auxf
 
 class Optic:
 
-    def __init__(self, N_pixels: int, fov: float):
+    def __init__(self, N_pixels: int, fov: float, mag_max: int):
 
         self.N_pix = N_pixels
         self.fov = fov*np.pi/180
+        self.mag_max = mag_max
 
 
     def check_if_inframe(self,r_SBFOVF):

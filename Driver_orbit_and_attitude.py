@@ -22,7 +22,7 @@ from catalog_class import Catalog
 
 #############################################################################
 # obrim csv del catàleg GAIA
-max_mag = 8  # magnitud màxima a què limitem el catàleg a carregar
+max_mag = 13  # magnitud màxima a què limitem el catàleg a carregar
 sector = 'test_sector'
 stardata = Catalog.load(max_mag,sector)
 print("Star catalog loaded successfully!")
@@ -33,34 +33,38 @@ print("Star catalog loaded successfully!")
 zp = 550 # altura del perigeu [km]
 za = 1000 # altura de l'apogeu [km]
 i = auxf.find_i_SSO(zp,za) #inclinació necessària per garantir òrbita heliosíncrona [deg]
-t0 = Time('2023-06-30 00:00:00.000', scale='tcb') # temps inicial de la simulació # tcb o tai?
+t0 = Time('2023-06-30 00:00:00.000', scale='tcb')  # temps inicial de la simulació # tcb/tai/ut1?
 
 N_pixels = 100 # nombre de píxels per costat del sensor (quadrat)
-fov = 6 # field of view [deg]
-optic_photsat = Optic(N_pixels, fov)
-photsat = Satellite(optic_photsat,t0,zp,za,i,0,0,0)
+fov = 6  # field of view [deg]
+optic_photsat = Optic(N_pixels, fov, max_mag)
+photsat = Satellite(optic_photsat,t0,zp,za,i,0,150,0)
 #############################################################################
+
+print(f"Time of last perigee: {photsat.orbit.t_last_perigee}")
 
 #############################################################################
 # definim les condicions a l'instant que volem avaluar
-delta_t = 140 #temps transcorregut entre t0 i l'instant en què ens trobem [min]
+delta_t = 120 #temps transcorregut entre t0 i l'instant en què ens trobem [min]
 t = t0 + astropy.time.core.TimeDelta(delta_t*u.min, scale='tcb') # ut1 ?
 photsat.orbit.propagate(delta_t)
 photsat.orbit.print_elements()
+
+print(f"Time of last perigee: {photsat.orbit.t_last_perigee}")
 #############################################################################
 
 #############################################################################
 # definim el target: volem que el Photsat apunti a l'estel i del catàleg
-i = 50 #índex del catàleg reduït que hem importat
+i = 250 #índex del catàleg reduït que hem importat
 ra_ICRS = stardata[i][2]
 dec_ICRS = stardata[i][3]
 print(f"Configurem Photsat perquè apunti a les coordenades ICRS ra = {ra_ICRS} deg; dec = {dec_ICRS} deg:")
-photsat.att.set_pointing(dec_ICRS, ra_ICRS) #calculem angles alpha i pitch necessaris perquè l'estel target quedi al centre del frame
+photsat.att.set_pointing(ra_ICRS, dec_ICRS) #calculem angles alpha i pitch necessaris perquè l'estel target quedi al centre del frame
 #############################################################################
 
 #############################################################################
 # construïm el catàleg de tots els estels que quedin dins del frame en la posició actual
-stars_in_frame = photsat.get_stars_in_frame(stardata)
+stars_in_frame = photsat.get_stars_in_frame()
 print("stars in frame successfully obtained")
 #############################################################################
 

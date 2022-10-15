@@ -1,5 +1,6 @@
 from orbit_class import Orbit
 from attitude_class import Attitude
+from catalog_class import Catalog
 
 import astropy.time.core
 import numpy as np
@@ -29,7 +30,11 @@ class Satellite:
         self.optic = optic
 
 
-    def get_stars_in_frame(self,stardata): # aquest mètode va aquí perquè depèn tant d'attitude com d'òptica
+    def get_stars_in_frame(self): # aquest mètode va aquí perquè depèn tant d'attitude com d'òptica
+
+        sector = self.att.get_sector()
+        stardata = Catalog.load(self.optic.mag_max, sector)
+
         stars_in_frame = []
         for star in stardata:
 
@@ -38,8 +43,8 @@ class Satellite:
             dec_ICRS = star[3]
 
             # vector que apunta a l'estel en la base Satellite Based Field Of View Fixed:
-            r_SBFOVF = self.att.ICRS_2_SBFOVF(dec_ICRS, ra_ICRS)
-            r_pqr = self.att.ICRS_2_pqr(dec_ICRS, ra_ICRS)
+            r_SBFOVF = self.att.ICRS_2_SBFOVF(ra_ICRS, dec_ICRS)
+            r_pqr = self.att.ICRS_2_pqr(ra_ICRS, dec_ICRS)
             u, v = r_pqr[0], r_pqr[1]
 
             # coordenades de l'estel en píxels dins del frame (new):
