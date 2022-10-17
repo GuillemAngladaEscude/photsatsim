@@ -65,6 +65,8 @@ class Orbit:
 
         # actions to execute
         Orbit.all.append(self)  # add to list
+        self.__ground_stations = []
+        self.__gs_contact = []
 
         # initialize the propagated parameters
         self.propagate(0)
@@ -81,6 +83,9 @@ class Orbit:
         [zp, za, i, raan, theta, aop] = cls.rv_2_elements(r,v)
         return cls(t0, zp, za, i, raan, theta, aop)
 
+    def add_ground_station(self,GS_name):
+        self.__ground_stations.append(GS_name)
+
     def print_elements(self):
         R = 6378.0
 
@@ -90,6 +95,21 @@ class Orbit:
         else:
             aop_print = f"{self.__w * 180 / pi} degrees"
             tsp_print = f"{(self.__t_0 + self.__propagated_deltat) / 60} minutes"
+
+        if len(self.__ground_stations) == 0:
+            gs_print = "N/A. Add ground stations using .add_ground_station()"
+        else:
+            gs_print = ""
+            i=0
+            for gs_name in self.__ground_stations:
+                gs_print += gs_name
+                gs_print += ": "
+                if self.__gs_contact[i]==True:
+                    gs_print += "Yes"
+                else:
+                    gs_print += "No"
+                gs_print += "\n    "
+                i = i+1
 
         print(f"""
 ----------------------------------------------------------------------------------------------------------------------
@@ -116,6 +136,9 @@ Geocentric equatorial Earth-fixed frame position: {self.__r_geo_rot} km
 Longitude: {self.__lon} degrees
 Latitude: {self.__lat} degrees
 Altitude: {self.__altitude} km
+
+Visual contact with set ground stations:
+    {gs_print}
         """)
 
     @property
@@ -132,8 +155,8 @@ Altitude: {self.__altitude} km
 
     def propagate(self, delta_t, method="Kepler_J2"):
         self.__t = self.__t0 + astropy.time.core.TimeDelta(delta_t * u.min)
-        #self.__delta_t = delta_t * 60
-        self.__propagated_deltat = delta_t * 60
+        delta_t = delta_t * 60
+        self.__propagated_deltat = delta_t
         if method == "Kepler_J2":  # Aquest mètode aplica una simple propagació kepleriana (2-body) afegint-hi l'efecte secular de J2 sobre RAAN i AOP.
             self.__propagate_KeplerJ2(delta_t)
         elif method=="interpolate_from_file":
@@ -196,9 +219,12 @@ Altitude: {self.__altitude} km
     def __get_r_geo_rot(self):
         wE = 2 * pi / (23.934469 * 3600)
         self.__get_r_geo_inertial()
-        theta = wE * self.__propagated_deltat # todo: que depengui de l'hora inicial
+        #theta = wE * self.__propagated_deltat #
+        t0_GMST = self.__t.sidereal_time('apparent', 'greenwich')
+        theta = t0_GMST.deg
         r_geo_rot = np.matmul(np.transpose(self.__R3(theta)), self.__r_geo_inert)
         self.__r_geo_rot = r_geo_rot
+        self.__check_GS_contact()
         # return r_geo_rot
 
     def __get_lat_lon_h(self):
@@ -226,6 +252,37 @@ Altitude: {self.__altitude} km
 
     def get_lat_lon_h(self):
         return [self.__lat, self.__lon, self.__altitude]
+
+    def __check_GS_contact(self):
+        R = 6378.1
+        self.__gs_contact = []
+        for gs_name in self.__ground_stations:
+            if gs_name =="Montsec":
+                x_GS = 4.729730e+03
+                y_GS = 6.023677e+01
+                z_GS = 4.266734e+03
+                r_GS = np.array([x_GS, y_GS, z_GS])
+
+            elif gs_name == "Svalbard":
+                x_GS = 1.252730e+03
+                y_GS = 3.452427e+02
+                z_GS = 6.236222e+03
+                r_GS = np.array([x_GS, y_GS, z_GS])
+
+            else:
+                print(f"Ground station name {gs_name} not acknowledged!")
+                r_GS = np.array([0, 0, 0])
+
+            r_sat = self.__r_geo_rot
+            d = np.linalg.norm(r_sat - r_GS)
+            h = self.__altitude
+            d_max = np.sqrt(h**2 + 2*h*R)
+
+            if d<d_max:
+                self.__gs_contact.append(True)
+            else:
+                self.__gs_contact.append(False)
+
 
     @staticmethod
     def rv_2_elements(r, v):
