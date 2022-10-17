@@ -23,7 +23,7 @@ from orbit_class import Orbit
 
 #############################################################################
 # obrim csv del catàleg GAIA
-max_mag = 6  # magnitud màxima a què limitem el catàleg a carregar
+max_mag = 10  # magnitud màxima a què limitem el catàleg a carregar
 sector = 'test_sector'
 stardata = Catalog.load(max_mag,sector)
 print("Star catalog loaded successfully!")
@@ -56,20 +56,21 @@ photsat = Satellite(optic_photsat, orbit_photsat)
 delta_t = 25 #temps transcorregut entre t0 i l'instant en què ens trobem [min]
 t = t0 + astropy.time.core.TimeDelta(delta_t*u.min, scale='tcb') # ut1 ?
 photsat.orbit.propagate(delta_t)
-photsat.orbit.print_elements()
+photsat.orbit.print_info()
 
 #############################################################################
 
 #############################################################################
 # definim el target: volem que el Photsat apunti a l'estel i del catàleg
-i = 1 #índex del catàleg reduït que hem importat
-ra_ICRS = stardata[i][2]
-dec_ICRS = stardata[i][3]
-# ra_ICRS = 45
-# dec_ICRS = 4
+# i = 1 #índex del catàleg reduït que hem importat
+# ra_ICRS = stardata[i][2]
+# dec_ICRS = stardata[i][3]
 
+ra_ICRS = 47
+dec_ICRS = 7
 print(f"Configurem Photsat perquè apunti a les coordenades ICRS ra = {ra_ICRS} deg; dec = {dec_ICRS} deg:")
-photsat.att.set_pointing(ra_ICRS, dec_ICRS) #calculem angles alpha i pitch necessaris perquè l'estel target quedi al centre del frame
+# calculem angles alpha i pitch necessaris perquè les coordenades target quedi al centre del frame
+photsat.att.set_pointing(ra_ICRS, dec_ICRS)
 #############################################################################
 
 #############################################################################

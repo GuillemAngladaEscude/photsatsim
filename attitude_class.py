@@ -20,6 +20,8 @@ from optic_class import Optic
 
 import aux_functions as auxf
 
+c = 299792.458  # km/s
+
 class Attitude:
 
     def __init__(self, orbit: Orbit):
@@ -90,7 +92,7 @@ class Attitude:
         self.__aberration_correction()
 
     def __aberration_correction(self):
-        c = 299792.458 #km/s
+
         n = -self.__r_SS_GCRS
         v_sat_geo = self.__orbit.v_geo_gcrs
         earth = get_body_barycentric_posvel('Earth', self.__t)
