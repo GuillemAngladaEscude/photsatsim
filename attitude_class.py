@@ -16,7 +16,6 @@ from astropy.coordinates import get_body, get_sun, get_body_barycentric, get_bod
 solar_system_ephemeris.set('jpl') #'de432s'
 
 from orbit_class import Orbit
-from optic_class import Optic
 
 import aux_functions as auxf
 
@@ -128,8 +127,8 @@ class Attitude:
         self.__pitch = np.arccos(-self.__r_SS_SBREF[0]/np.sin(self.__alpha))
         self.__roll = 0.0
         #todo: posar warnings d'apantallament per sol, terra, panell solar
-        print(f"alpha = {self.__alpha*180/pi}")
-        print(f"pitch = {self.__pitch * 180 / pi}")
+        print(f"alpha = {self.__alpha * 180/pi}")
+        print(f"pitch = {self.__pitch * 180/pi}")
 
     @property
     def r_SS_SBREF(self):
@@ -137,13 +136,33 @@ class Attitude:
 
     @property
     def angles(self):
-        return [self.__yaw, self.__pitch, self.__roll, self.__alpha]
+        return [self.__yaw*180/pi, self.__pitch*180/pi, self.__roll*180/pi, self.__alpha*180/pi]
 
-    #@property
-    #def target(self):
-     #   return self.__r_SS_GCRS
+    @property
+    def yaw(self):
+        return self.__yaw * 180/pi
 
-    @r_SS_SBREF.setter
+    @property
+    def pitch(self):
+        return self.__pitch * 180/pi
+
+    @property
+    def roll(self):
+        return self.__roll * 180/pi
+
+    @property
+    def r_SS_GCRS(self):
+        return self.__r_SS_GCRS
+
+    @property
+    def dec_ICRS(self):
+        return self.__dec_ICRS
+
+    @property
+    def ra_ICRS(self):
+        return self.__ra_ICRS
+
+    #@r_SS_SBREF.setter
     def set_r_SS_SBREF(self, vec):
         self.__r_SS_SBREF = vec
         self.__r_SS_SBREF_2_GCRS()
@@ -167,8 +186,8 @@ class Attitude:
     #@target.setter
     def set_pointing(self, ra_ICRS, dec_ICRS):
 
-        self.ra_ICRS = ra_ICRS
-        self.dec_ICRS = dec_ICRS
+        self.__ra_ICRS = ra_ICRS
+        self.__dec_ICRS = dec_ICRS
 
         self.__r_SS_GCRS = self.__angles_ICRS_2_r_GCRS(ra_ICRS, dec_ICRS)
         #print(f"r_GCRS: {self.__r_SS_GCRS}")
@@ -212,7 +231,7 @@ class Attitude:
         self.__M_SBFOVF_SBSSF = auxf.R2(self.__alpha)
         self.__M_SBSSF_SBFOVF = np.transpose(self.__M_SBFOVF_SBSSF)
 
-        self.__M_SBFOVF_pqr = np.array([[1,0,0],[0,0,-1],[0,1,0]])
+        self.__M_SBFOVF_pqr = np.array([[1,0,0],[0,0,1],[0,-1,0]])
         self.__M_pqr_SBFOVF = np.transpose(self.__M_SBFOVF_pqr)
 
     def ICRS_2_SBFOVF(self, ra_ICRS, dec_ICRS):
@@ -224,9 +243,12 @@ class Attitude:
         return r_SBFOVF
 
     def ICRS_2_pqr(self, ra_ICRS, dec_ICRS):
-        r_SBFOVF = self.ICRS_2_SBFOVF(ra_ICRS,dec_ICRS)
+        r_SBFOVF = self.ICRS_2_SBFOVF(ra_ICRS, dec_ICRS)
         r_pqr = self.__M_SBFOVF_pqr @ r_SBFOVF
+        return r_pqr
 
+    def SBFOVF_2_pqr(self, r_SBFOVF):
+        r_pqr = self.__M_SBFOVF_pqr @ r_SBFOVF
         return r_pqr
 
 
@@ -234,6 +256,11 @@ class Attitude:
         # todo: definir el sector del cel que toqui segons els arxius del catàleg GAIA
         return 'test_sector'
 
+
+
+
+
+    #  old stuff trash
 
     # def GCRS_2_SBFOVF(self, r):
     #     M = self.__get_M_SBREF2GCRS()

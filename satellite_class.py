@@ -1,30 +1,19 @@
 from orbit_class import Orbit
 from attitude_class import Attitude
 from catalog_class import Catalog
+from optic_class import Optic
 
-import astropy.time.core
-import numpy as np
-from scipy.optimize import root
-import scipy.constants as constant
-from numpy import pi, ndarray
-from astropy.time import Time
-
-from astropy.utils import iers
-#iers.conf.iers_auto_url = 'https://datacenter.iers.org/data/9/finals2000A.all'
-
-from astropy import units as u
-import astropy.coordinates
-from astropy.coordinates import SkyCoord
 from astropy.coordinates import solar_system_ephemeris, EarthLocation
 from astropy.coordinates import get_body, get_sun, get_body_barycentric, get_body_barycentric_posvel
 solar_system_ephemeris.set('jpl') #'de432s'
 
-import aux_functions as auxf
+
+from tqdm import tqdm
 
 class Satellite:
 
-    #def __init__(self, optic, t0, zp: float, za: float, i: float, raan: float, theta_0 = 0, aop = 0):
-    def __init__(self, optic, orbit):
+
+    def __init__(self, optic: Optic, orbit: Orbit):
 
         #self.orbit = Orbit(t0, zp, za, i, raan, theta_0, aop)
         self.orbit = orbit
@@ -34,11 +23,12 @@ class Satellite:
 
     def get_stars_in_frame(self): # aquest mètode va aquí perquè depèn tant d'attitude com d'òptica
 
+        print("Obtaining stars in frame...")
         sector = self.att.get_sector()
         stardata = Catalog.load(self.optic.mag_max, sector)
 
         stars_in_frame = []
-        for star in stardata:
+        for star in tqdm(stardata, colour="WHITE"):
 
             # coordenades ICRS de cada estel:
             ra_ICRS = star[2]
@@ -46,15 +36,20 @@ class Satellite:
 
             # vector que apunta a l'estel en la base Satellite Based Field Of View Fixed:
             r_SBFOVF = self.att.ICRS_2_SBFOVF(ra_ICRS, dec_ICRS)
-            r_pqr = self.att.ICRS_2_pqr(ra_ICRS, dec_ICRS)
-            u, v = r_pqr[0], r_pqr[1]
 
             # coordenades de l'estel en píxels dins del frame (new):
             if self.optic.check_if_inframe(r_SBFOVF):
-                frame_coord = self.optic.project_SBFOVF_2_sensor(r_SBFOVF, 'linear')
+                r_pqr = self.att.SBFOVF_2_pqr(r_SBFOVF)
+                u, v = self.optic.project_pqr_2_uv(r_pqr)
+                x, y = self.optic.uv_2_xy(u, v)
+
+                #frame_coord = self.optic.project_SBFOVF_2_sensor(r_SBFOVF, 'linear') #aquest era per quan no hi havia
+                # el mètode xy_2_xy_TL a la classe Image
+                frame_coord = [x, y]
                 new_row = [frame_coord[0], frame_coord[1],
                            float(star[5])]  # star[5] dona la magnitud aparent; canviar-ho a star[4] si es vol el flux
                 stars_in_frame.append(new_row)
 
+        print("Stars in frame successfully obtained!")
         return stars_in_frame
 

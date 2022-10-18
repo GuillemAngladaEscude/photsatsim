@@ -240,6 +240,8 @@ class Image:
             # we assign each value of the catalog to its corresponding variable
             x, y, flux = catalog[k][0], catalog[k][1], self.__mag_to_flux(catalog[k][2])
 
+            x, y = self.xy_2_xy_TL(x,y)  # afegit per Lluc
+
             # we calculate the pixel and the partition of the pixel in which is the star
             pix_x1, par_x = int(x // 1.0), x % 1.0
             pix_y1, par_y = int(y // 1.0), y % 1.0
@@ -545,4 +547,8 @@ class Image:
         file_name = 'GeneratedImage'
 
         np.save(os.path.join(output_path, file_name), self.__array)
+
+
+    def xy_2_xy_TL(self, x, y):
+        return [self.__npx/2 - y, self.__npy/2 + x]
 

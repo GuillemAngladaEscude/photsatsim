@@ -262,7 +262,7 @@ Visual contact with set ground stations:
         Returns the day and time at which the satellite passed through the perigee of its orbit for the last time
         :return: time of last perigee as a Time object <class 'astropy.time.core.Time'>
         """
-        return self.t - astropy.time.core.TimeDelta(self.__t_0 * u.s)
+        return self.t - astropy.time.core.TimeDelta(self.__t_0 * u.s) - astropy.time.core.TimeDelta((self.__propagated_deltat - floor(self.__propagated_deltat/self.__T)*self.__T) * u.s)
 
     @property
     def v_geo_gcrs(self):
