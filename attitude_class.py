@@ -254,7 +254,7 @@ class Attitude:
 
     def get_sector(self):
         # todo: definir el sector del cel que toqui segons els arxius del catàleg GAIA
-        return 'test_sector'
+        return 'test_sector_2'
 
 
 

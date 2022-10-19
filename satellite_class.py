@@ -31,8 +31,8 @@ class Satellite:
         for star in tqdm(stardata, colour="WHITE"):
 
             # coordenades ICRS de cada estel:
-            ra_ICRS = star[2]
-            dec_ICRS = star[3]
+            ra_ICRS = star[1]   # per a test sector 2!!
+            dec_ICRS = star[2]  # per a test sector 2!!
 
             # vector que apunta a l'estel en la base Satellite Based Field Of View Fixed:
             r_SBFOVF = self.att.ICRS_2_SBFOVF(ra_ICRS, dec_ICRS)
@@ -47,7 +47,7 @@ class Satellite:
                 # el mètode xy_2_xy_TL a la classe Image
                 frame_coord = [x, y]
                 new_row = [frame_coord[0], frame_coord[1],
-                           float(star[5])]  # star[5] dona la magnitud aparent; canviar-ho a star[4] si es vol el flux
+                           float(star[3])]  # per a test sector 2!! [3] dona la magnitud aparent
                 stars_in_frame.append(new_row)
 
         print("Stars in frame successfully obtained!")
