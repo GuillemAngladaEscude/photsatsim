@@ -25,7 +25,7 @@ from orbit_class import Orbit
 
 #############################################################################
 # obrim csv del catàleg GAIA
-max_mag = 14  # magnitud màxima a què limitem el catàleg a carregar
+max_mag = 9  # magnitud màxima a què limitem el catàleg a carregar
 # sector = 'test_sector_2'
 # stardata = Catalog.load(max_mag,sector)
 # print("Star catalog loaded successfully!")
@@ -36,7 +36,7 @@ max_mag = 14  # magnitud màxima a què limitem el catàleg a carregar
 zp = 550 # altura del perigeu [km]
 za = 1000 # altura de l'apogeu [km]
 i = auxf.find_i_SSO(zp,za) #inclinació necessària per garantir òrbita heliosíncrona [deg]
-t0 = Time('2023-06-24 12:00:00.000', scale='tcb')  # temps inicial de la simulació # tcb/tai/ut1?
+t0 = Time('2023-02-24 12:00:00.000', scale='tcb')  # temps inicial de la simulació # tcb/tai/ut1?
 
 orbit_photsat = Orbit.from_elements(t0, zp, za, i, raan = 0, theta_0 = 20, aop = 0)
 orbit_photsat.add_ground_station("Montsec")
@@ -61,7 +61,7 @@ photsat = Satellite(optic_photsat, orbit_photsat)
 
 #############################################################################
 # definim les condicions a l'instant que volem avaluar
-delta_t = 125 #temps transcorregut entre t0 i l'instant en què ens trobem [min]
+delta_t = 50 #temps transcorregut entre t0 i l'instant en què ens trobem [min]
 t = t0 + astropy.time.core.TimeDelta(delta_t*u.min, scale='tcb') # ut1 ?
 photsat.orbit.propagate(delta_t)
 photsat.orbit.print_info()
