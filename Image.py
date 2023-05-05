@@ -532,21 +532,40 @@ class Image:
         plot = plt.matshow(logarithmic_array)
         # colors of the plot are gray
         plt.gray()
+
         # the plot has a color bar
         plt.colorbar(plot)
+
         plt.show()
 
-    def SaveToFile(self):
+    def SaveToFile(self, i):
         """Save the image in a file inside the folder 'output'
 
         :return: the generated image is saved in a file called 'GeneratedImage.npy' inside the folder 'output'
         """
+        logarithmic_array = np.log10(self.__array + 1.0)
+
+        # we do a plot of the logarithmic image
+
+        plt.figure(figsize=(10, 10))
+
+        plt.matshow(logarithmic_array, fignum=1)
+        plt.axis('off')
+
+        # colors of the plot are gray
+        plt.gray()
+
+        #plot(figsize=(8, 8), dpi=80)
+        #plt.show()
 
         # we make sure that the image is saved to a folder called 'output' in the same directory
         output_path = sys.path[0] + '/output/'
-        file_name = 'GeneratedImage'
+        file_name = 'FullScan_Image' + str(i)
 
-        np.save(os.path.join(output_path, file_name), self.__array)
+        #np.save(os.path.join(output_path, file_name), self.__array)
+        plt.savefig(output_path + file_name, bbox_inches="tight")
+
+        plt.close()
 
 
     def xy_2_xy_TL(self, x, y):

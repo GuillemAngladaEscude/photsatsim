@@ -274,6 +274,10 @@ Visual contact with set ground stations:
         """
         return self.v_geo_inert
 
+    @property
+    def T(self):
+        return self.__T
+
     def propagate(self, delta_t, method="Kepler_J2"):
         """
         Propagates the position and parameters of the satellite one delta_t into the future with the selected method. If
@@ -293,7 +297,7 @@ Visual contact with set ground stations:
             pass  # quan s'hagi propagat una òrbita amb precisió i se n'hagin guardat els valors en un arxiu separat
                   # s'utilitzarà aquest mètode
         else:
-            raise Exception(f"Method {method} is not recognized as a valid method!")
+            raise Exception(f"Method {method} is not recognized as a valid method for orbit propagation!")
 
         self.__get_lat_lon_h()
 

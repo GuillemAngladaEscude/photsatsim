@@ -60,14 +60,15 @@ class Satellite:
 
         print("Obtaining stars in frame...")
         sector = self.att.get_sector()
-        stardata = Catalog.load(self.optic.mag_max, sector)
+        #stardata = Catalog.load(self.optic.mag_max, sector)
+        stardata = Catalog.load(self.optic, self.att, 'direct_gaia_download')
 
         stars_in_frame = []
         for star in tqdm(stardata, colour="WHITE"):
 
             # coordenades ICRS de cada estel:
-            ra_ICRS = star[1]   # per a test sector 2!!
-            dec_ICRS = star[2]  # per a test sector 2!!
+            ra_ICRS = star[1]   # per a direct gaia download i test sector 2!
+            dec_ICRS = star[2]  # per a direct gaia download i test sector 2!
 
             # vector que apunta a l'estel en la base Satellite Based Field Of View Fixed:
             r_SBFOVF = self.att.ICRS_2_SBFOVF(ra_ICRS, dec_ICRS)
@@ -82,7 +83,7 @@ class Satellite:
                 # el mètode xy_2_xy_TL a la classe Image
                 frame_coord = [x, y]
                 new_row = [frame_coord[0], frame_coord[1],
-                           float(star[3])]  # per a test sector 2!! [3] dona la magnitud aparent
+                           float(star[3])]
                 stars_in_frame.append(new_row)
 
         print("Stars in frame successfully obtained!")

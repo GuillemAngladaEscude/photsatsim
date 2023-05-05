@@ -67,7 +67,7 @@ class Optic:
             (SBFOVF) Frame [ , , ]
         :return: True if the point in the sky given by the input vector is inside the frame, and False otherwise
         """
-        if np.absolute(r_SBFOVF[2]) < np.sin(self.__fov_vert/2) and np.absolute(r_SBFOVF[0]) < np.sin(self.__fov_hor/2):
+        if np.absolute(r_SBFOVF[2]) < np.sin(self.__fov_vert/2) and np.absolute(r_SBFOVF[0]) < np.sin(self.__fov_hor/2) and r_SBFOVF[1]>0:
             return True
         else:
             return False

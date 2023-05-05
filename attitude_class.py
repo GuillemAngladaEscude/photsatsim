@@ -54,6 +54,7 @@ class Attitude:
 
     roll: double
         Current Roll angle [deg]
+
     r_SS_GCRS: double array
         Unit vector in the Geocentric Celestial Reference Frame (GCRS) frame pointing to the sky coordinates of the
         central pixel of the sensor [ , , ]
@@ -119,17 +120,18 @@ class Attitude:
 
         self.__solar_panel_screening_angle = 90*pi/180  # hard-coded, TBD
 
-        #parking values
-        self.__yaw = 0
-        self.__pitch = 0
-        self.__roll = 0
-        self.__alpha = 180
-
         self.__optic = optic
         self.__orbit = orbit
         self.__t = orbit.t
 
-        #self.set_angles(0,0,0,180)
+        #parking values
+        yaw_0 = 0
+        pitch_0 = 0
+        roll_0 = 0
+        alpha_0 = 180
+        self.set_angles(yaw_0, pitch_0, roll_0, alpha_0)
+
+
         self.__angles_2_r_SS_SBREF()
         self.__r_SS_SBREF_2_GCRS()
         self.__r_SS_GCRS_2_angles_ICRS()
@@ -214,6 +216,8 @@ class Attitude:
             coordinates of the central pixel of the sensor, and stores it in self.__r_SS_SBREF. This method can only run
             if the equivalent vector in the Satellite-Based, Rotating, Ecliptic-Fixed (SBREF) is known and stored in
             self.__r_SS_SBREF.
+            NOTE: it does not use the matrices computed by compute_matrices() since the method set_r_SS_SBREF calls it
+                before knowing the required attitude
         :return:
         """
         M = self.__get_M_SBREF2GCRS()
@@ -257,13 +261,7 @@ class Attitude:
             stored in self.__yaw, self.__pitch, self.__roll and self.__alpha.
         :return:
         """
-        # angle_SS = self.__alpha*pi/180
-        r_ss_0 = np.matmul(auxf.R3(self.__alpha),[0, 1, 0])
-        # yaw = self.__yaw*pi/180
-        # pitch = self.__pitch*pi/180
-        # roll = self.__roll*pi/180
-        M = np.transpose(auxf.R1(self.__roll)@auxf.R2(self.__pitch)@auxf.R3(self.__yaw))
-        self.__r_SS_SBREF = M @ r_ss_0
+        self.__r_SS_SBREF = self.__M_SBBF_SBREF @ self.__M_SBSSF_SBBF @ self.__M_SBFOVF_SBSSF @ [0, 1, 0]
 
     def __r_SS_SBREF_2_angles(self):
         """
@@ -298,7 +296,8 @@ class Attitude:
         r_sun_GCRS = self.__get_r_sun_unit_GCRS(t, loc)
         r_sun_SBFOVF = self.GCRS_2_SBFOVF(r_sun_GCRS)
         if self.__optic.check_if_inframe(r_sun_SBFOVF):
-            warn("The sun is in the field of view!")
+            self.__orbit.print_info()
+            raise Exception("The sun is in the field of view!")
 
     def __check_earth(self):
         """
@@ -314,14 +313,16 @@ class Attitude:
         angle = np.abs(np.arccos(np.dot(r_E_u, r_ss)/(np.linalg.norm(r_E_u)*np.linalg.norm(r_ss))))
 
         if angle < angle_lim:
-            warn("The siderostat is pointing towards the Earth!")
+            #self.__orbit.print_info() # todo: fix bug - contact_gs està buit i no pot imprimir la info quan al primer instant passa això
+            #raise Exception("The siderostat is pointing towards the Earth!")
+            print("Warning: The siderostat is pointing towards the Earth!")
 
     def __check_solar_panel(self):
         """
         Checks if the siderostat field of view is pointing to (i.e., blocked by) the solar panel
         """
         if self.__alpha < self.__solar_panel_screening_angle/2 or self.__alpha > (2*pi -self.__solar_panel_screening_angle/2):
-            warn("The siderostat is pointing to the solar panel!")
+            raise Exception("The siderostat is pointing to the solar panel!")
 
     def __check_attitude_warnings(self):
         """
